@@ -249,9 +249,17 @@ function renderWikiContent(data) {
             : '<div class="empty-state"><p>暂无内容，请编辑此页面</p></div>';
     } else {
         if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 开始解析Markdown内容');
-        let htmlContent = parseMarkdown(data.content);
         
-        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 解析后的HTML:', htmlContent.substring(0, 150) + '...');
+        let htmlContent;
+        // 检查内容是否已经是HTML格式
+        if (data.content.includes('<') && data.content.includes('>')) {
+            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 内容已是HTML格式，直接使用');
+            htmlContent = data.content;
+        } else {
+            htmlContent = parseMarkdown(data.content);
+        }
+        
+        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 最终HTML:', htmlContent.substring(0, 150) + '...');
         
         if (CONFIG.paperMode && !htmlContent.includes('class="paper"')) {
             htmlContent = `<div class="paper" data-page="${CONFIG.currentPage}">${htmlContent}</div>`;
@@ -259,7 +267,11 @@ function renderWikiContent(data) {
         
         container.innerHTML = htmlContent;
         
-        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] container.innerHTML 设置完成');
+        if (CONFIG.DEBUG_MODE) {
+            console.log('[DEBUG] container.innerHTML 设置完成');
+            console.log('[DEBUG] container内容长度:', container.innerHTML.length);
+            console.log('[DEBUG] 实际内容预览:', container.textContent.substring(0, 100) + '...');
+        }
         
         container.setAttribute('data-current-page', CONFIG.currentPage);
     }
