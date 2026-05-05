@@ -150,6 +150,19 @@ async function loadWikiContent() {
         if (error.name === 'AbortError') {
             // 这是预期内的中止，通常因页面切换或超时导致，无需作为错误提示给用户
             if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 请求被中止 (${error.name})，目标页面: ${targetPageForThisRequest}`);
+            
+            // 如果页面未切换，需要隐藏加载动画并显示备用数据
+            if (targetPageForThisRequest === CONFIG.currentPage) {
+                CONFIG.isLoading = false;
+                loading.style.display = 'none';
+                
+                // 使用备用数据
+                if (CONFIG.USE_FALLBACK_DATA && CONFIG.FALLBACK_DATA[CONFIG.currentPage]) {
+                    if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 对 ${CONFIG.currentPage} 使用备用数据（请求被中止）`);
+                    renderWikiContent(CONFIG.FALLBACK_DATA[CONFIG.currentPage]);
+                }
+            }
+            
             return; // 静默退出
         }
         
