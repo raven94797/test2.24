@@ -111,7 +111,7 @@ body {
 }
 
 .nav-dropdown-content {
-    display: none;
+    display: none !important;
     position: absolute;
     top: calc(100% + 0.5rem);
     left: 0;
@@ -122,10 +122,15 @@ body {
     overflow: hidden;
     z-index: 1000;
     padding: 0.5rem 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.nav-dropdown:hover .nav-dropdown-content {
-    display: block;
+.nav-dropdown:hover > .nav-dropdown-content {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .nav-link {
