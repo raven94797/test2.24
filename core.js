@@ -1,0 +1,481 @@
+/**
+ * 核心功能模块 - 应用初始化、导航、内容加载和渲染
+ */
+
+function initApp() {
+    initNavigation();
+    loadWikiContent();
+    bindEventListeners();
+    
+    setTimeout(() => {
+        loadTimeline();
+        loadComments();
+        checkMissingImages();
+    }, 1000);
+}
+
+function initNavigation() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const hash = window.location.hash.substring(1) || 'project';
+    
+    navLinks.forEach(link => {
+        const page = link.getAttribute('data-page');
+        link.classList.toggle('active', page === hash);
+        
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetPage = this.getAttribute('data-page');
+            
+            if (targetPage === CONFIG.currentPage && CONFIG.lastLoadedPage === targetPage) {
+                return;
+            }
+            
+            navLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+            
+            window.location.hash = targetPage;
+            
+            CONFIG.requestedPage = targetPage;
+            CONFIG.currentPage = targetPage;
+            
+            loadWikiContent();
+        });
+    });
+    
+    window.addEventListener('hashchange', function() {
+        const hash = window.location.hash.substring(1) || 'project';
+        if (CONFIG.BIN_IDS[hash]) {
+            CONFIG.requestedPage = hash;
+            CONFIG.currentPage = hash;
+            loadWikiContent();
+        }
+    });
+}
+
+async function loadWikiContent() {
+    if (CONFIG.isLoading) {
+        return;
+    }
+    
+    const binId = CONFIG.BIN_IDS[CONFIG.currentPage];
+    if (!binId) {
+        showError('未找到该页面的配置信息');
+        return;
+    }
+    
+    if (CONFIG.currentRequest) {
+        CONFIG.currentRequest.abort();
+    }
+    
+    const container = document.getElementById('wikiContent');
+    const loading = document.getElementById('contentLoading');
+    
+    if (!container || !loading) {
+        console.error('无法找到 wikiContent 或 contentLoading 元素');
+        return;
+    }
+    
+    container.innerHTML = '';
+    container.style.display = 'none';
+    
+    loading.style.display = 'block';
+    
+    loading.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p>正在加载 ${CONFIG.currentPage} 内容...</p>
+    `;
+    
+    CONFIG.isLoading = true;
+    
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        CONFIG.currentRequest = controller;
+        
+        const response = await fetch(`${CONFIG.JSONBIN_API_URL}/${binId}`, {
+            headers: {
+                'X-Master-Key': CONFIG.JSONBIN_MASTER_KEY
+            },
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: 加载失败`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.record && CONFIG.currentPage === CONFIG.requestedPage) {
+            renderWikiContent(data.record);
+        } else {
+            console.warn('收到非当前页面的数据，已忽略');
+        }
+        
+    } catch (error) {
+        console.error('加载Wiki内容失败:', error);
+        
+        if (error.name === 'AbortError') {
+            showError('请求超时，请检查网络连接');
+        } else {
+            showError(`加载失败: ${error.message}`);
+        }
+    } finally {
+        CONFIG.isLoading = false;
+        CONFIG.currentRequest = null;
+    }
+}
+
+function renderWikiContent(data) {
+    const container = document.getElementById('wikiContent');
+    const loading = document.getElementById('contentLoading');
+    
+    if (!container || !loading) {
+        console.error('无法找到 wikiContent 或 contentLoading 元素');
+        return;
+    }
+    
+    if (CONFIG.requestedPage && CONFIG.requestedPage !== CONFIG.currentPage) {
+        console.warn(`数据不匹配: 请求的是 ${CONFIG.requestedPage}, 收到的是 ${CONFIG.currentPage}`);
+        return;
+    }
+    
+    CONFIG.lastLoadedPage = CONFIG.currentPage;
+    
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    
+    setTimeout(() => {
+        container.innerHTML = '';
+    }, 0);
+    
+    if (!data || !data.content) {
+        container.innerHTML = CONFIG.paperMode 
+            ? '<div class="paper"><p>暂无内容，请编辑此页面</p></div>'
+            : '<div class="empty-state"><p>暂无内容，请编辑此页面</p></div>';
+    } else {
+        let htmlContent = parseMarkdown(data.content);
+        
+        if (CONFIG.paperMode && !htmlContent.includes('class="paper"')) {
+            htmlContent = `<div class="paper" data-page="${CONFIG.currentPage}">${htmlContent}</div>`;
+        }
+        
+        container.innerHTML = htmlContent;
+        
+        container.setAttribute('data-current-page', CONFIG.currentPage);
+    }
+    
+    if (data.title) {
+        document.title = `${data.title} - 北师珠iGEM Wiki`;
+    }
+    
+    if (window.MathJax) {
+        if (MathJax.typeset) {
+            MathJax.typeset();
+        } else if (MathJax.startup && MathJax.startup.promise) {
+            MathJax.startup.promise.then(() => {
+                MathJax.typeset();
+            });
+        }
+    }
+    
+    const timelineSection = document.getElementById('timelineSection');
+    const commentSection = document.getElementById('commentSection');
+    
+    if (timelineSection) {
+        timelineSection.style.display = 
+            data.features && data.features.timeline ? 'block' : 'none';
+    }
+    
+    if (commentSection) {
+        commentSection.style.display = 
+            data.features && data.features.comments ? 'block' : 'none';
+    }
+    
+    container.style.opacity = '0';
+    container.style.transition = 'opacity 0.3s ease';
+    
+    setTimeout(() => {
+        loading.style.display = 'none';
+        container.style.display = 'block';
+        
+        setTimeout(() => {
+            container.style.opacity = '1';
+        }, 10);
+    }, 100);
+}
+
+function enableEditing() {
+    CONFIG.isEditing = true;
+    const contentContainer = document.getElementById('wikiContent');
+    const editorContainer = document.getElementById('editorContainer');
+    const formatToolbar = document.getElementById('formatToolbar');
+    const contentEditor = document.getElementById('contentEditor');
+    const saveContentBtn = document.getElementById('saveContentBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const editContentBtn = document.getElementById('editContentBtn');
+    
+    if (!contentContainer || !editorContainer || !formatToolbar || !contentEditor) {
+        console.error('无法找到编辑相关的DOM元素');
+        return;
+    }
+    
+    CONFIG.originalContent = contentContainer.innerHTML;
+    let contentToEdit = CONFIG.originalContent;
+    if (CONFIG.paperMode && contentToEdit.includes('<div class="paper">')) {
+        const match = contentToEdit.match(/<div class="paper">([\s\S]*?)<\/div>/);
+        if (match && match[1]) {
+            contentToEdit = match[1];
+        }
+    }
+    
+    const markdownContent = htmlToMarkdown(contentToEdit);
+    contentEditor.value = markdownContent;
+    
+    contentContainer.style.display = 'none';
+    editorContainer.style.display = 'block';
+    formatToolbar.style.display = 'flex';
+    if (saveContentBtn) saveContentBtn.style.display = 'inline-block';
+    if (cancelEditBtn) cancelEditBtn.style.display = 'inline-block';
+    if (editContentBtn) editContentBtn.style.display = 'none';
+    
+    updateEditStatus('编辑模式已启用');
+}
+
+async function saveContent() {
+    const binId = CONFIG.BIN_IDS[CONFIG.currentPage];
+    const newMarkdown = document.getElementById('contentEditor').value;
+    
+    if (!binId) {
+        showError('未找到该页面的配置信息');
+        return;
+    }
+    
+    const imageMatches = newMarkdown.match(CONFIG.IMAGES.SYNTAX.PATTERN);
+    if (imageMatches) {
+        const invalidSyntax = [];
+        
+        imageMatches.forEach(syntax => {
+            const match = syntax.match(CONFIG.IMAGES.SYNTAX.SINGLE);
+            if (!match) {
+                invalidSyntax.push(syntax);
+            }
+        });
+        
+        if (invalidSyntax.length > 0) {
+            if (!confirm(`发现 ${invalidSyntax.length} 个格式不正确的图片语法。是否继续保存？\n\n不正确的语法：\n${invalidSyntax.join('\n')}`)) {
+                return;
+            }
+        }
+    }
+    
+    if (!confirm('确定要保存修改吗？')) {
+        return;
+    }
+    
+    try {
+        updateEditStatus('正在保存...');
+        
+        const getResponse = await fetch(`${CONFIG.JSONBIN_API_URL}/${binId}`, {
+            headers: {
+                'X-Master-Key': CONFIG.JSONBIN_MASTER_KEY,
+                'X-Bin-Meta': 'false'
+            }
+        });
+        
+        if (!getResponse.ok) {
+            throw new Error(`HTTP ${getResponse.status}: 获取数据失败`);
+        }
+        
+        const currentData = await getResponse.json();
+        
+        const htmlContent = parseMarkdown(newMarkdown);
+        
+        const updatedData = {
+            ...currentData,
+            content: htmlContent,
+            last_updated: new Date().toISOString()
+        };
+        
+        const putResponse = await fetch(`${CONFIG.JSONBIN_API_URL}/${binId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': CONFIG.JSONBIN_MASTER_KEY
+            },
+            body: JSON.stringify(updatedData)
+        });
+        
+        if (!putResponse.ok) {
+            throw new Error(`HTTP ${putResponse.status}: 保存失败`);
+        }
+        
+        renderWikiContent(updatedData);
+        
+        cancelEditing();
+        updateEditStatus('保存成功！');
+        
+        if (currentData.features && currentData.features.timeline) {
+            loadTimeline();
+        }
+        if (currentData.features && currentData.features.comments) {
+            loadComments();
+        }
+        
+    } catch (error) {
+        console.error('保存内容失败:', error);
+        showError(`保存失败: ${error.message}`);
+    }
+}
+
+function cancelEditing() {
+    CONFIG.isEditing = false;
+    
+    const contentEditor = document.getElementById('contentEditor');
+    const editorContainer = document.getElementById('editorContainer');
+    const formatToolbar = document.getElementById('formatToolbar');
+    const wikiContent = document.getElementById('wikiContent');
+    const saveContentBtn = document.getElementById('saveContentBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const editContentBtn = document.getElementById('editContentBtn');
+    
+    if (contentEditor) contentEditor.value = '';
+    if (editorContainer) editorContainer.style.display = 'none';
+    if (formatToolbar) formatToolbar.style.display = 'none';
+    if (wikiContent) wikiContent.style.display = 'block';
+    if (saveContentBtn) saveContentBtn.style.display = 'none';
+    if (cancelEditBtn) cancelEditBtn.style.display = 'none';
+    if (editContentBtn) editContentBtn.style.display = 'inline-block';
+    
+    updateEditStatus('');
+}
+
+function applyFormat(format) {
+    const editor = document.getElementById('contentEditor');
+    if (!editor) return;
+    
+    const selectionStart = editor.selectionStart;
+    const selectionEnd = editor.selectionEnd;
+    const selectedText = editor.value.substring(selectionStart, selectionEnd);
+    const beforeText = editor.value.substring(0, selectionStart);
+    const afterText = editor.value.substring(selectionEnd);
+    
+    let formattedText = '';
+    
+    switch(format) {
+        case 'h2':
+            formattedText = `# ${selectedText || '标题'}`;
+            break;
+        case 'h3':
+            formattedText = `## ${selectedText || '子标题'}`;
+            break;
+        case 'h4':
+            formattedText = `### ${selectedText || '小标题'}`;
+            break;
+        case 'h5':
+            formattedText = `#### ${selectedText || '小小标题'}`;
+            break;
+        case 'h6':
+            formattedText = `##### ${selectedText || '小小小标题'}`;
+            break;
+        case 'p':
+            formattedText = `${selectedText || '段落内容'}`;
+            break;
+        case 'strong':
+            formattedText = `**${selectedText || '强调文本'}**`;
+            break;
+        case 'reference':
+            formattedText = `>>> ${selectedText || '引用内容'}`;
+            break;
+        case 'img':
+            const imgUrl = prompt('请输入图片URL:');
+            if (imgUrl) {
+                const altText = prompt('请输入图片描述:', '图片描述');
+                formattedText = `![${altText || '图片'}](${imgUrl})`;
+            }
+            break;
+        case 'ul':
+            formattedText = `- ${selectedText || '列表项'}`;
+            break;
+        case 'latex-inline':
+            formattedText = '$' + (selectedText || 'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}') + '$';
+            break;
+        case 'latex-block':
+            formattedText = '$$' + (selectedText || 'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}') + '$$';
+            break;
+    }
+    
+    editor.value = beforeText + formattedText + afterText;
+    editor.focus();
+    
+    const newPosition = selectionStart + formattedText.length;
+    editor.setSelectionRange(newPosition, newPosition);
+}
+
+function bindEventListeners() {
+    const editContentBtn = document.getElementById('editContentBtn');
+    const saveContentBtn = document.getElementById('saveContentBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const commentSubmitBtn = document.getElementById('commentSubmitBtn');
+    const addTimelineBtn = document.getElementById('addTimelineBtn');
+    const insertImageBtn = document.getElementById('insertImageBtn');
+    const paperModeToggle = document.getElementById('paperModeToggle');
+    
+    if (editContentBtn) editContentBtn.addEventListener('click', enableEditing);
+    if (saveContentBtn) saveContentBtn.addEventListener('click', saveContent);
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', cancelEditing);
+    if (commentSubmitBtn) commentSubmitBtn.addEventListener('click', submitComment);
+    if (addTimelineBtn) addTimelineBtn.addEventListener('click', addTimelineEvent);
+    
+    document.querySelectorAll('.format-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const format = this.getAttribute('data-format');
+            applyFormat(format);
+        });
+    });
+    
+    if (insertImageBtn) insertImageBtn.addEventListener('click', insertImageSyntax);
+    
+    if (paperModeToggle) {
+        paperModeToggle.addEventListener('change', function() {
+            CONFIG.paperMode = this.checked;
+            loadWikiContent();
+        });
+    }
+}
+
+function updateEditStatus(message) {
+    const editStatus = document.getElementById('editStatus');
+    if (editStatus) {
+        editStatus.textContent = message;
+    }
+}
+
+function showError(message) {
+    const container = document.getElementById('wikiContent');
+    const loading = document.getElementById('contentLoading');
+    
+    if (!container) {
+        console.error('无法找到 wikiContent 元素');
+        return;
+    }
+    
+    if (loading) {
+        loading.style.display = 'none';
+    }
+    
+    container.innerHTML = `<div class="error-state" style="text-align:center; padding:2rem; color:#e74c3c;">
+        <p style="font-size:1.2rem; margin-bottom:1rem;">⚠️ 加载失败</p>
+        <p>${message}</p>
+        <button onclick="loadWikiContent()" style="margin-top:1rem; padding:0.5rem 1.5rem; background:#3498db; color:white; border:none; border-radius:4px; cursor:pointer;">
+            重试
+        </button>
+    </div>`;
+    container.style.display = 'block';
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { initApp, initNavigation, loadWikiContent, renderWikiContent, enableEditing, saveContent, cancelEditing, applyFormat, bindEventListeners, updateEditStatus, showError };
+}
