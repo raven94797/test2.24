@@ -191,6 +191,13 @@ async function loadWikiContent() {
 }
 
 function renderWikiContent(data) {
+    if (CONFIG.DEBUG_MODE) {
+        console.log('[DEBUG] 开始渲染内容');
+        console.log('[DEBUG] requestedPage:', CONFIG.requestedPage);
+        console.log('[DEBUG] currentPage:', CONFIG.currentPage);
+        console.log('[DEBUG] 数据:', data);
+    }
+    
     const container = document.getElementById('wikiContent');
     const loading = document.getElementById('contentLoading');
     
