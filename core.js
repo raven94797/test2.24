@@ -57,7 +57,15 @@ function initNavigation() {
 }
 
 async function loadWikiContent() {
+    // 1. 在开始新请求前，主动中止任何可能存在的旧请求
+    if (CONFIG.currentRequest) {
+        CONFIG.currentRequest.abort();
+        CONFIG.currentRequest = null;
+        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 已中止之前的请求');
+    }
+
     if (CONFIG.isLoading) {
+        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 已有加载请求在进行中，跳过');
         return;
     }
     
@@ -79,7 +87,6 @@ async function loadWikiContent() {
     container.style.display = 'none';
     
     loading.style.display = 'block';
-    
     loading.innerHTML = `
         <div class="loading-spinner"></div>
         <p>正在加载 ${CONFIG.currentPage} 内容...</p>
@@ -87,16 +94,20 @@ async function loadWikiContent() {
     
     CONFIG.isLoading = true;
     
-    const requestedPage = CONFIG.currentPage;
+    // 2. 使用一个局部变量记录本次请求的目标页面，避免闭包问题
+    const targetPageForThisRequest = CONFIG.currentPage;
     
     if (CONFIG.DEBUG_MODE) {
-        console.log(`[DEBUG] 加载页面: ${CONFIG.currentPage}`);
-        console.log(`[DEBUG] BIN_ID: ${binId}`);
+        console.log(`[DEBUG] 开始加载页面: ${targetPageForThisRequest}, BIN_ID: ${binId}`);
     }
     
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        // 3. （可选）将超时时间延长至30秒，为慢速网络留出余地
+        const timeoutId = setTimeout(() => {
+            if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 请求超时，中止: ${targetPageForThisRequest}`);
+            controller.abort();
+        }, 30000); // 从 10000 改为 30000 毫秒
         CONFIG.currentRequest = controller;
         
         const response = await fetch(`${CONFIG.JSONBIN_API_URL}/${binId}`, {
@@ -108,9 +119,10 @@ async function loadWikiContent() {
         
         clearTimeout(timeoutId);
         
-        if (requestedPage !== CONFIG.currentPage) {
-            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 页面已切换，忽略响应');
-            return;
+        // 4. 在关键节点严格检查：当前页面是否仍是发起请求时的目标页面
+        if (targetPageForThisRequest !== CONFIG.currentPage) {
+            if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 页面已从 ${targetPageForThisRequest} 切换至 ${CONFIG.currentPage}，忽略本响应`);
+            return; // 静默退出，不渲染，不报错
         }
         
         if (!response.ok) {
@@ -119,14 +131,14 @@ async function loadWikiContent() {
         
         const data = await response.json();
         
-        if (requestedPage !== CONFIG.currentPage) {
-            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 页面已切换，忽略响应');
+        // 5. 再次验证
+        if (targetPageForThisRequest !== CONFIG.currentPage) {
+            if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 页面在数据处理前已切换，忽略数据`);
             return;
         }
         
         if (CONFIG.DEBUG_MODE) {
-            console.log('[DEBUG] API响应成功');
-            console.log('[DEBUG] 数据:', data);
+            console.log('[DEBUG] API响应成功，开始渲染');
         }
         
         if (data.record) {
@@ -134,27 +146,34 @@ async function loadWikiContent() {
         }
         
     } catch (error) {
+        // 6. 区分处理"中止错误"和"其他网络/服务器错误"
         if (error.name === 'AbortError') {
-            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 请求已取消（页面切换）');
-            return;
+            // 这是预期内的中止，通常因页面切换或超时导致，无需作为错误提示给用户
+            if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 请求被中止 (${error.name})，目标页面: ${targetPageForThisRequest}`);
+            return; // 静默退出
         }
         
         console.error('加载Wiki内容失败:', error);
         
-        if (requestedPage !== CONFIG.currentPage) {
-            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 页面已切换，忽略错误');
-            return;
-        }
-        
-        if (CONFIG.USE_FALLBACK_DATA && CONFIG.FALLBACK_DATA[CONFIG.currentPage]) {
-            if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 使用备用数据: ${CONFIG.currentPage}`);
-            renderWikiContent(CONFIG.FALLBACK_DATA[CONFIG.currentPage]);
+        // 7. 仅当错误发生在当前仍然活跃的页面上时，才显示错误或备用数据
+        if (targetPageForThisRequest === CONFIG.currentPage) {
+            if (CONFIG.USE_FALLBACK_DATA && CONFIG.FALLBACK_DATA[CONFIG.currentPage]) {
+                if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 对 ${CONFIG.currentPage} 使用备用数据`);
+                renderWikiContent(CONFIG.FALLBACK_DATA[CONFIG.currentPage]);
+            } else {
+                // 只有当页面未切换，且是真正的网络/服务器错误时，才提示用户
+                showError(`加载失败: ${error.message}`);
+            }
         } else {
-            showError(`加载失败: ${error.message}`);
+            if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 错误发生在已切换的旧页面(${targetPageForThisRequest})上，忽略`);
         }
     } finally {
-        CONFIG.isLoading = false;
-        CONFIG.currentRequest = null;
+        // 8. 清理：仅当此finally块属于当前最新请求时才重置状态
+        if (CONFIG.currentPage === targetPageForThisRequest) {
+            CONFIG.isLoading = false;
+        }
+        // 注意：不要在此处将 CONFIG.currentRequest 设为 null，因为可能已被新的请求覆盖
+        // 更安全的做法是，在上面 abort 旧请求后立即设为 null，或由新的请求流程覆盖
     }
 }
 
