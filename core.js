@@ -18,6 +18,10 @@ function initNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');
     const hash = window.location.hash.substring(1) || 'project';
     
+    // 设置初始页面状态
+    CONFIG.requestedPage = hash;
+    CONFIG.currentPage = hash;
+    
     navLinks.forEach(link => {
         const page = link.getAttribute('data-page');
         link.classList.toggle('active', page === hash);
@@ -87,6 +91,13 @@ async function loadWikiContent() {
     
     CONFIG.isLoading = true;
     
+    // 调试日志
+    if (CONFIG.DEBUG_MODE) {
+        console.log(`[DEBUG] 加载页面: ${CONFIG.currentPage}`);
+        console.log(`[DEBUG] BIN_ID: ${binId}`);
+        console.log(`[DEBUG] 使用备用数据: ${CONFIG.USE_FALLBACK_DATA}`);
+    }
+    
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -107,6 +118,11 @@ async function loadWikiContent() {
         
         const data = await response.json();
         
+        if (CONFIG.DEBUG_MODE) {
+            console.log('[DEBUG] API响应成功');
+            console.log('[DEBUG] 数据:', data);
+        }
+        
         if (data.record && CONFIG.currentPage === CONFIG.requestedPage) {
             renderWikiContent(data.record);
         } else {
@@ -116,7 +132,13 @@ async function loadWikiContent() {
     } catch (error) {
         console.error('加载Wiki内容失败:', error);
         
-        if (error.name === 'AbortError') {
+        // 使用备用数据
+        if (CONFIG.USE_FALLBACK_DATA && CONFIG.FALLBACK_DATA[CONFIG.currentPage]) {
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`[DEBUG] 使用备用数据: ${CONFIG.currentPage}`);
+            }
+            renderWikiContent(CONFIG.FALLBACK_DATA[CONFIG.currentPage]);
+        } else if (error.name === 'AbortError') {
             showError('请求超时，请检查网络连接');
         } else {
             showError(`加载失败: ${error.message}`);
