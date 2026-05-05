@@ -67,10 +67,6 @@ async function loadWikiContent() {
         return;
     }
     
-    if (CONFIG.currentRequest) {
-        CONFIG.currentRequest.abort();
-    }
-    
     const container = document.getElementById('wikiContent');
     const loading = document.getElementById('contentLoading');
     
@@ -91,11 +87,11 @@ async function loadWikiContent() {
     
     CONFIG.isLoading = true;
     
-    // 调试日志
+    const requestedPage = CONFIG.currentPage;
+    
     if (CONFIG.DEBUG_MODE) {
         console.log(`[DEBUG] 加载页面: ${CONFIG.currentPage}`);
         console.log(`[DEBUG] BIN_ID: ${binId}`);
-        console.log(`[DEBUG] 使用备用数据: ${CONFIG.USE_FALLBACK_DATA}`);
     }
     
     try {
@@ -112,34 +108,47 @@ async function loadWikiContent() {
         
         clearTimeout(timeoutId);
         
+        if (requestedPage !== CONFIG.currentPage) {
+            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 页面已切换，忽略响应');
+            return;
+        }
+        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: 加载失败`);
         }
         
         const data = await response.json();
         
+        if (requestedPage !== CONFIG.currentPage) {
+            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 页面已切换，忽略响应');
+            return;
+        }
+        
         if (CONFIG.DEBUG_MODE) {
             console.log('[DEBUG] API响应成功');
             console.log('[DEBUG] 数据:', data);
         }
         
-        if (data.record && CONFIG.currentPage === CONFIG.requestedPage) {
+        if (data.record) {
             renderWikiContent(data.record);
-        } else {
-            console.warn('收到非当前页面的数据，已忽略');
         }
         
     } catch (error) {
+        if (error.name === 'AbortError') {
+            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 请求已取消（页面切换）');
+            return;
+        }
+        
         console.error('加载Wiki内容失败:', error);
         
-        // 使用备用数据
+        if (requestedPage !== CONFIG.currentPage) {
+            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 页面已切换，忽略错误');
+            return;
+        }
+        
         if (CONFIG.USE_FALLBACK_DATA && CONFIG.FALLBACK_DATA[CONFIG.currentPage]) {
-            if (CONFIG.DEBUG_MODE) {
-                console.log(`[DEBUG] 使用备用数据: ${CONFIG.currentPage}`);
-            }
+            if (CONFIG.DEBUG_MODE) console.log(`[DEBUG] 使用备用数据: ${CONFIG.currentPage}`);
             renderWikiContent(CONFIG.FALLBACK_DATA[CONFIG.currentPage]);
-        } else if (error.name === 'AbortError') {
-            showError('请求超时，请检查网络连接');
         } else {
             showError(`加载失败: ${error.message}`);
         }
