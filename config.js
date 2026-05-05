@@ -9,14 +9,6 @@ const CONFIG = {
     
     // 页面配置
     BIN_IDS: {
-         'project': '69d355cd856a68218902fd64',
-        'team': '69d355fb856a68218902fde8',
-        'model': '69d3560c36566621a88262e6',
-        'lab': '69d355eaaaba882197cb3d1d',
-        'human': '69d3561f856a68218902fe54',
-        'parts': '69d3513936566621a8825323',
-        'timeline': '69d3561f856a68218902fe54',
-        'comments': '69d3561f856a68218902fe54'
         // Project
         'description': '69f9b8dbaaba88219772a4da',
         'design': '69f9b8e4856a682189aab732',
