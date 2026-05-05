@@ -77,15 +77,39 @@ body {
 .main-nav {
     display: flex;
     gap: 2rem;
+    align-items: flex-start;
+}
+
+.nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-section-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.nav-section-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .nav-link {
     color: white;
     text-decoration: none;
-    padding: 0.5rem 1rem;
+    padding: 0.35rem 0.8rem;
     border-radius: 4px;
     transition: var(--transition);
     font-weight: 500;
+    font-size: 0.9rem;
 }
 
 .nav-link:hover {

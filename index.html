@@ -30,12 +30,37 @@
                 </div>
             </a>
             <nav class="main-nav">
-                <a href="#" class="nav-link active" data-page="project">项目总览</a>
-                <a href="#" class="nav-link" data-page="team">团队介绍</a>
-                <a href="#" class="nav-link" data-page="model">模型设计</a>
-                <a href="#" class="nav-link" data-page="lab">实验室</a>
-                <a href="#" class="nav-link" data-page="human">人文实践</a>
-                <a href="#" class="nav-link" data-page="parts">标准部件</a>
+                <div class="nav-section">
+                    <div class="nav-section-title">Project</div>
+                    <div class="nav-section-links">
+                        <a href="#" class="nav-link active" data-page="description">Description</a>
+                        <a href="#" class="nav-link" data-page="design">Design</a>
+                        <a href="#" class="nav-link" data-page="contribution">Contribution</a>
+                        <a href="#" class="nav-link" data-page="implementation">Implementation</a>
+                        <a href="#" class="nav-link" data-page="safety">Safety</a>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Wet Lab</div>
+                    <div class="nav-section-links">
+                        <a href="#" class="nav-link" data-page="engineering">Engineering</a>
+                        <a href="#" class="nav-link" data-page="notebook">Notebook</a>
+                        <a href="#" class="nav-link" data-page="result">Result</a>
+                        <a href="#" class="nav-link" data-page="protocol">Protocol</a>
+                        <a href="#" class="nav-link" data-page="parts">Parts</a>
+                        <a href="#" class="nav-link" data-page="proof-of-concept">Proof of Concept</a>
+                        <a href="#" class="nav-link" data-page="future">Future</a>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Human Practice</div>
+                    <div class="nav-section-links">
+                        <a href="#" class="nav-link" data-page="ihp">IHP</a>
+                        <a href="#" class="nav-link" data-page="education">Education</a>
+                        <a href="#" class="nav-link" data-page="inclusivity">Inclusivity</a>
+                        <a href="#" class="nav-link" data-page="collaboration">Collaboration</a>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>
@@ -44,6 +69,10 @@
         <div class="content-loading" id="contentLoading">
             <div class="loading-spinner"></div>
             <p>正在加载内容...</p>
+        </div>
+        <div class="edit-toolbar" id="editToolbar">
+            <button id="editContentBtn" class="edit-btn">编辑页面</button>
+            <span id="editStatus" class="edit-status"></span>
         </div>
         <div class="content-container" id="wikiContent">
         </div>
@@ -74,7 +103,6 @@
             <div style="margin-top:1rem; display:flex; gap:1rem;">
                 <button id="saveContentBtn" class="edit-btn save-btn" style="display:none;">保存</button>
                 <button id="cancelEditBtn" class="edit-btn" style="display:none; background:#95a5a6;">取消</button>
-                <span id="editStatus" class="edit-status"></span>
             </div>
         </div>
 
@@ -120,8 +148,5 @@
     <script src="images.js"></script>
     <script src="social.js"></script>
     <script src="core.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
 </body>
 </html>
