@@ -336,6 +336,7 @@ function enableEditing() {
     const saveContentBtn = document.getElementById('saveContentBtn');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const editContentBtn = document.getElementById('editContentBtn');
+    const editToolbar = document.getElementById('editToolbar');
     
     if (!contentContainer || !editorContainer || !formatToolbar || !contentEditor) {
         console.error('无法找到编辑相关的DOM元素');
@@ -360,6 +361,7 @@ function enableEditing() {
     if (saveContentBtn) saveContentBtn.style.display = 'inline-block';
     if (cancelEditBtn) cancelEditBtn.style.display = 'inline-block';
     if (editContentBtn) editContentBtn.style.display = 'none';
+    if (editToolbar) editToolbar.style.display = 'none';
     
     updateEditStatus('编辑模式已启用');
 }
@@ -460,6 +462,7 @@ function cancelEditing() {
     const saveContentBtn = document.getElementById('saveContentBtn');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const editContentBtn = document.getElementById('editContentBtn');
+    const editToolbar = document.getElementById('editToolbar');
     
     if (contentEditor) contentEditor.value = '';
     if (editorContainer) editorContainer.style.display = 'none';
@@ -468,6 +471,7 @@ function cancelEditing() {
     if (saveContentBtn) saveContentBtn.style.display = 'none';
     if (cancelEditBtn) cancelEditBtn.style.display = 'none';
     if (editContentBtn) editContentBtn.style.display = 'inline-block';
+    if (editToolbar) editToolbar.style.display = 'flex';
     
     updateEditStatus('');
 }
