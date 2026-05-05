@@ -1,3 +1,6 @@
+/* 导入Google字体 - 必须放在最顶部 */
+@import url('https://fonts.googleapis.com/css2?family=Arima+Madurai:wght@400;600;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
 /* 基础样式重置 */
 * {
     margin: 0;
@@ -109,6 +112,13 @@ body {
     padding: 2.5rem;
     box-shadow: var(--card-shadow);
     margin: 2rem 0rem 2rem 8rem;
+}
+
+/* paperMode时的容器样式 - 透明背景让paper样式生效 */
+.content-container.paper-mode {
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
 }
 
 .content-loading {
@@ -399,16 +409,18 @@ body {
     text-decoration: underline;
 }
 
-/* ==================== 从description抄来的纸张样式 ==================== */
+/* ==================== 纸张样式 ==================== */
         
         /* 纸张样式 - 包装容器 */
         .paper {
             background-color: #f0e7d8;
             border-radius: 40px;
             padding: 40px;
-            padding-left: 20px;
-            padding-right: 100px;
-            margin: 20px 0;
+            padding-left: 60px;
+            padding-right: 60px;
+            margin: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         /* 标题样式 */
@@ -839,9 +851,6 @@ body {
         .image-insert-btn:hover {
             background: #218838;
         }
-        
-        /* 导入Google字体 */
-@import url('https://fonts.googleapis.com/css2?family=Arima+Madurai:wght@400;600;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
 /* 格式选择工具栏 */
 .format-toolbar {

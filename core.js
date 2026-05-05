@@ -265,6 +265,13 @@ function renderWikiContent(data) {
         
         container.innerHTML = htmlContent;
         
+        // 根据paperMode设置容器类
+        if (CONFIG.paperMode) {
+            container.classList.add('paper-mode');
+        } else {
+            container.classList.remove('paper-mode');
+        }
+        
         // 移除强制样式，让CSS类样式生效
         container.style.color = '';
         container.style.background = '';
