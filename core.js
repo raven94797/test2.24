@@ -138,11 +138,22 @@ async function loadWikiContent() {
         }
         
         if (CONFIG.DEBUG_MODE) {
-            console.log('[DEBUG] API响应成功，开始渲染');
+            console.log('[DEBUG] API响应成功');
+            console.log('[DEBUG] data 对象:', data);
+            console.log('[DEBUG] data.record 存在:', !!data.record);
+            console.log('[DEBUG] data.record 内容:', data.record ? JSON.stringify(data.record, null, 2) : 'null');
         }
         
         if (data.record) {
+            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 准备调用 renderWikiContent');
             renderWikiContent(data.record);
+        } else {
+            if (CONFIG.DEBUG_MODE) console.log('[DEBUG] data.record 不存在，无法渲染');
+            // 如果没有record，尝试使用整个data
+            if (data.content) {
+                if (CONFIG.DEBUG_MODE) console.log('[DEBUG] data.content 存在，尝试直接渲染');
+                renderWikiContent(data);
+            }
         }
         
     } catch (error) {
