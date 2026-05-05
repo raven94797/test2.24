@@ -602,4 +602,6 @@ function showError(message) {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { initApp, initNavigation, loadWikiContent, renderWikiContent, enableEditing, saveContent, cancelEditing, applyFormat, bindEventListeners, updateEditStatus, showError };
+} else {
+    document.addEventListener('DOMContentLoaded', initApp);
 }
