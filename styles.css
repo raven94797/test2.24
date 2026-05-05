@@ -804,6 +804,74 @@ input:checked + .toggle-slider:before {
     transform: translateX(26px);
 }
 
+/* 列表样式 */
+.paper ul,
+.paper ol {
+    margin: 20px 0;
+    padding-left: 40px;
+}
+
+.paper li {
+    font-size: 1.5em;
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.paper ul {
+    list-style-type: disc;
+}
+
+.paper ol {
+    list-style-type: decimal;
+}
+
+/* 代码样式 */
+.paper code {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    background-color: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #c7254e;
+}
+
+.paper pre {
+    background-color: #2d2d2d;
+    color: #ccc;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin: 20px 0;
+}
+
+.paper pre code {
+    background-color: transparent;
+    padding: 0;
+    color: #ccc;
+}
+
+/* 链接样式 */
+.paper a {
+    color: #2d5f79;
+    text-decoration: underline;
+}
+
+.paper a:hover {
+    color: #5f792d;
+}
+
+/* 分隔线样式 */
+.paper hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #d4cde9, transparent);
+    margin: 40px 0;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
     .format-toolbar {

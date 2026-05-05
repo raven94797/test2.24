@@ -265,17 +265,16 @@ function renderWikiContent(data) {
         
         container.innerHTML = htmlContent;
         
-        // 强制设置内容容器的样式，确保文字可见
-        container.style.color = '#2c3e50';  // 深色文字
-        container.style.background = '#ffffff';  // 白色背景
-        container.style.minHeight = '200px';  // 确保有最小高度
-        container.style.padding = '20px';  // 确保有内边距
+        // 移除强制样式，让CSS类样式生效
+        container.style.color = '';
+        container.style.background = '';
+        container.style.minHeight = '';
+        container.style.padding = '';
         
         if (CONFIG.DEBUG_MODE) {
             console.log('[DEBUG] container.innerHTML 设置完成');
             console.log('[DEBUG] container内容长度:', container.innerHTML.length);
             console.log('[DEBUG] 实际内容预览:', container.textContent.substring(0, 100) + '...');
-            console.log('[DEBUG] container样式:', getComputedStyle(container));
         }
         
         container.setAttribute('data-current-page', CONFIG.currentPage);
