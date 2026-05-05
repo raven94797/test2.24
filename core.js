@@ -224,6 +224,13 @@ function renderWikiContent(data) {
     
     CONFIG.lastLoadedPage = CONFIG.currentPage;
     
+    if (CONFIG.DEBUG_MODE) {
+        console.log('[DEBUG] container 元素:', container);
+        console.log('[DEBUG] loading 元素:', loading);
+        console.log('[DEBUG] data.content 存在:', !!data.content);
+        console.log('[DEBUG] data.content 值:', data.content ? data.content.substring(0, 100) + '...' : 'undefined');
+    }
+    
     while (container.firstChild) {
         container.removeChild(container.firstChild);
     }
@@ -233,17 +240,23 @@ function renderWikiContent(data) {
     }, 0);
     
     if (!data || !data.content) {
+        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] data.content 为空，显示默认内容');
         container.innerHTML = CONFIG.paperMode 
             ? '<div class="paper"><p>暂无内容，请编辑此页面</p></div>'
             : '<div class="empty-state"><p>暂无内容，请编辑此页面</p></div>';
     } else {
+        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 开始解析Markdown内容');
         let htmlContent = parseMarkdown(data.content);
+        
+        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] 解析后的HTML:', htmlContent.substring(0, 150) + '...');
         
         if (CONFIG.paperMode && !htmlContent.includes('class="paper"')) {
             htmlContent = `<div class="paper" data-page="${CONFIG.currentPage}">${htmlContent}</div>`;
         }
         
         container.innerHTML = htmlContent;
+        
+        if (CONFIG.DEBUG_MODE) console.log('[DEBUG] container.innerHTML 设置完成');
         
         container.setAttribute('data-current-page', CONFIG.currentPage);
     }
