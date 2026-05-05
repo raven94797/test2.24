@@ -238,9 +238,7 @@ function renderWikiContent(data) {
         container.removeChild(container.firstChild);
     }
     
-    setTimeout(() => {
-        container.innerHTML = '';
-    }, 0);
+    // 移除了之前的 setTimeout 清空代码，因为它会在设置内容后立即清空容器
     
     if (!data || !data.content) {
         if (CONFIG.DEBUG_MODE) console.log('[DEBUG] data.content 为空，显示默认内容');
@@ -267,10 +265,17 @@ function renderWikiContent(data) {
         
         container.innerHTML = htmlContent;
         
+        // 强制设置内容容器的样式，确保文字可见
+        container.style.color = '#2c3e50';  // 深色文字
+        container.style.background = '#ffffff';  // 白色背景
+        container.style.minHeight = '200px';  // 确保有最小高度
+        container.style.padding = '20px';  // 确保有内边距
+        
         if (CONFIG.DEBUG_MODE) {
             console.log('[DEBUG] container.innerHTML 设置完成');
             console.log('[DEBUG] container内容长度:', container.innerHTML.length);
             console.log('[DEBUG] 实际内容预览:', container.textContent.substring(0, 100) + '...');
+            console.log('[DEBUG] container样式:', getComputedStyle(container));
         }
         
         container.setAttribute('data-current-page', CONFIG.currentPage);
