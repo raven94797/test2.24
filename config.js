@@ -9,6 +9,9 @@ const CONFIG = {
     
     // 页面配置
     BIN_IDS: {
+        // Home (不使用API，单独处理)
+        'home': null,
+        
         // Project
         'description': '69f9b8dbaaba88219772a4da',
         'design': '69f9b8e4856a682189aab732',
@@ -39,7 +42,7 @@ const CONFIG = {
     USE_FALLBACK_DATA: true,
     
     // 当前页面
-    currentPage: 'description',
+    currentPage: 'home',
     
     isEditing: false,
     originalContent: '',
@@ -64,6 +67,39 @@ const CONFIG = {
     
     // 备用数据（当API不可用时使用）
     FALLBACK_DATA: {
+        'home': {
+            title: 'BNU-iGEM 2025',
+            content: `<div class="home-container">
+    <div class="home-hero">
+        <h1 class="home-title">🧬 BNU-iGEM 2025</h1>
+        <p class="home-subtitle">智能合成生物学平台</p>
+    </div>
+    <div class="home-content">
+        <div class="home-section">
+            <h2>Welcome</h2>
+            <p>欢迎来到北师珠iGEM项目页面。本项目致力于通过合成生物学方法解决环境问题。</p>
+        </div>
+        <div class="home-cards">
+            <div class="home-card" onclick="loadWikiContent('description')">
+                <span class="card-icon">📋</span>
+                <h3>Project</h3>
+                <p>查看项目描述、设计方案和实施计划</p>
+            </div>
+            <div class="home-card" onclick="loadWikiContent('engineering')">
+                <span class="card-icon">🔬</span>
+                <h3>Wet Lab</h3>
+                <p>了解实验室工作、实验记录和研究成果</p>
+            </div>
+            <div class="home-card" onclick="loadWikiContent('ihp')">
+                <span class="card-icon">🤝</span>
+                <h3>Human Practice</h3>
+                <p>探索人文实践、教育和合作活动</p>
+            </div>
+        </div>
+    </div>
+</div>`,
+            features: { timeline: false, comments: false }
+        },
         'description': {
             title: 'Description',
             content: '<h2>项目描述</h2><p>这是项目的基本描述页面。</p>',

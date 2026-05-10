@@ -16,7 +16,7 @@ function initApp() {
 
 function initNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');
-    const hash = window.location.hash.substring(1) || 'project';
+    const hash = window.location.hash.substring(1) || 'home';
     
     // 设置初始页面状态
     CONFIG.requestedPage = hash;
@@ -47,7 +47,7 @@ function initNavigation() {
     });
     
     window.addEventListener('hashchange', function() {
-        const hash = window.location.hash.substring(1) || 'project';
+        const hash = window.location.hash.substring(1) || 'home';
         if (CONFIG.BIN_IDS[hash]) {
             CONFIG.requestedPage = hash;
             CONFIG.currentPage = hash;
@@ -70,16 +70,23 @@ async function loadWikiContent() {
     }
     
     const binId = CONFIG.BIN_IDS[CONFIG.currentPage];
-    if (!binId) {
-        showError('未找到该页面的配置信息');
-        return;
-    }
     
     const container = document.getElementById('wikiContent');
     const loading = document.getElementById('contentLoading');
     
     if (!container || !loading) {
         console.error('无法找到 wikiContent 或 contentLoading 元素');
+        return;
+    }
+    
+    if (CONFIG.currentPage === 'home') {
+        loading.style.display = 'none';
+        renderWikiContent(CONFIG.FALLBACK_DATA['home']);
+        return;
+    }
+    
+    if (!binId) {
+        showError('未找到该页面的配置信息');
         return;
     }
     
@@ -228,6 +235,14 @@ function renderWikiContent(data) {
     }
     
     CONFIG.lastLoadedPage = CONFIG.currentPage;
+    
+    const editToolbar = document.getElementById('editToolbar');
+    const editContentBtn = document.getElementById('editContentBtn');
+    if (CONFIG.currentPage === 'home') {
+        if (editToolbar) editToolbar.style.display = 'none';
+    } else {
+        if (editToolbar) editToolbar.style.display = 'flex';
+    }
     
     if (CONFIG.DEBUG_MODE) {
         console.log('[DEBUG] container 元素:', container);
