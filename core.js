@@ -212,6 +212,8 @@ function renderWikiContent(data) {
         console.log('[DEBUG] 数据:', data);
     }
     
+    CONFIG.currentPageData = data;
+    
     const container = document.getElementById('wikiContent');
     const loading = document.getElementById('contentLoading');
     
@@ -344,15 +346,22 @@ function enableEditing() {
     }
     
     CONFIG.originalContent = contentContainer.innerHTML;
-    let contentToEdit = CONFIG.originalContent;
-    if (CONFIG.paperMode && contentToEdit.includes('<div class="paper">')) {
-        const match = contentToEdit.match(/<div class="paper">([\s\S]*?)<\/div>/);
-        if (match && match[1]) {
-            contentToEdit = match[1];
+    
+    let markdownContent = '';
+    
+    if (CONFIG.currentPageData && CONFIG.currentPageData.markdown) {
+        markdownContent = CONFIG.currentPageData.markdown;
+    } else {
+        let contentToEdit = CONFIG.originalContent;
+        if (CONFIG.paperMode && contentToEdit.includes('<div class="paper">')) {
+            const match = contentToEdit.match(/<div class="paper">([\s\S]*?)<\/div>/);
+            if (match && match[1]) {
+                contentToEdit = match[1];
+            }
         }
+        markdownContent = htmlToMarkdown(contentToEdit);
     }
     
-    const markdownContent = htmlToMarkdown(contentToEdit);
     contentEditor.value = markdownContent;
     
     contentContainer.style.display = 'none';
@@ -418,6 +427,7 @@ async function saveContent() {
         const updatedData = {
             ...currentData,
             content: htmlContent,
+            markdown: newMarkdown,
             last_updated: new Date().toISOString()
         };
         
