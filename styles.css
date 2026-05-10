@@ -110,8 +110,14 @@ body {
     opacity: 0.7;
 }
 
+.nav-dropdown:hover > .nav-dropdown-content {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .nav-dropdown-content {
-    display: none !important;
+    display: none;
     position: absolute;
     top: calc(100% + 0.5rem);
     left: 0;
@@ -125,12 +131,6 @@ body {
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.nav-dropdown:hover > .nav-dropdown-content {
-    display: block !important;
-    opacity: 1;
-    transform: translateY(0);
 }
 
 .nav-link {

@@ -568,6 +568,35 @@ function bindEventListeners() {
             loadWikiContent();
         });
     }
+    
+    document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+        let hideTimeout;
+        
+        dropdown.addEventListener('mouseenter', function() {
+            clearTimeout(hideTimeout);
+            const content = this.querySelector('.nav-dropdown-content');
+            if (content) {
+                content.style.display = 'block';
+                content.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+            }
+        });
+        
+        dropdown.addEventListener('mouseleave', function() {
+            const content = this.querySelector('.nav-dropdown-content');
+            if (content) {
+                hideTimeout = setTimeout(() => {
+                    content.style.opacity = '0';
+                    content.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        if (content.style.opacity === '0') {
+                            content.style.display = 'none';
+                        }
+                    }, 200);
+                }, 300);
+            }
+        });
+    });
 }
 
 function updateEditStatus(message) {
