@@ -221,6 +221,9 @@ function renderWikiContent(data) {
     
     CONFIG.currentPageData = data;
     
+    // 保存原始Markdown内容用于编辑
+    CONFIG.rawContent = data ? (data.markdown || '') : '';
+    
     const container = document.getElementById('wikiContent');
     const loading = document.getElementById('contentLoading');
     
@@ -364,7 +367,10 @@ function enableEditing() {
     
     let markdownContent = '';
     
-    if (CONFIG.currentPageData && CONFIG.currentPageData.markdown) {
+    // 优先使用保存的原始Markdown内容
+    if (CONFIG.rawContent && CONFIG.rawContent.trim()) {
+        markdownContent = CONFIG.rawContent;
+    } else if (CONFIG.currentPageData && CONFIG.currentPageData.markdown) {
         markdownContent = CONFIG.currentPageData.markdown;
     } else {
         let contentToEdit = CONFIG.originalContent;
